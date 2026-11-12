@@ -17,10 +17,17 @@ function setupEnglishSpeech(synth, root=document, storage=localStorage) {
   let saved={};
   try{saved=JSON.parse(storage.getItem('culcomEnglishSpeech')||'{}')||{};}catch{}
   let selected=typeof saved.voice==='string'?saved.voice:'';
+  const legacyRate=root.createElement('option');legacyRate.value='0.88';legacyRate.textContent='업데이트 전 속도';rate.appendChild(legacyRate);
   rate.value=['0.9','1','1.1'].includes(String(saved.rate))?String(saved.rate):'1';
+  if(selected==='__original__')rate.value='0.88';
+  rate.disabled=selected==='__original__';
   let voices=[];
   function choice(){return voices.find(v=>v.voiceURI===selected)||voices[0]||null;}
   function describe(){
+    if(selected==='__original__'){
+      status.textContent='업데이트 전 재생 방식: 기기의 기본 미국 영어 음성 · 기존 속도(0.88). 목소리를 앱이 지정하지 않으므로 기기 설정이 바뀌었다면 예전과 다르게 들릴 수 있어요.';
+      return;
+    }
     const v=choice();
     status.textContent=v?`${selected&&v.voiceURI===selected?'선택한':'자동 추천'} 목소리: ${v.name} (${v.lang}). 기기와 브라우저에 따라 목소리와 억양이 달라요.`
       :'영어 목소리 목록을 불러오는 중입니다. 목록이 없으면 기기의 기본 영어 음성으로 재생해요.';
@@ -30,14 +37,18 @@ function setupEnglishSpeech(synth, root=document, storage=localStorage) {
     voices=rankedEnglishVoices(synth.getVoices());
     select.replaceChildren();
     const auto=root.createElement('option');auto.value='';auto.textContent='자동 추천';select.appendChild(auto);
+    const original=root.createElement('option');original.value='__original__';original.textContent='업데이트 전 기본 음성·속도';select.appendChild(original);
     voices.forEach(v=>{const o=root.createElement('option');o.value=v.voiceURI;o.textContent=`${v.name} · ${v.lang}`;select.appendChild(o);});
-    select.value=voices.some(v=>v.voiceURI===selected)?selected:'';
+    select.value=selected==='__original__'||voices.some(v=>v.voiceURI===selected)?selected:'';
     describe();
   }
   function save(){try{storage.setItem('culcomEnglishSpeech',JSON.stringify({voice:selected,rate:Number(rate.value)}));}catch{}}
-  select.onchange=()=>{selected=select.value;save();describe();};
+  select.onchange=()=>{selected=select.value;rate.disabled=selected==='__original__';if(rate.disabled)rate.value='0.88';else if(rate.value==='0.88')rate.value='1';save();describe();};
   rate.onchange=save;
   refresh();
   synth.addEventListener('voiceschanged',refresh);
-  return {apply(utterance){const voice=choice();if(voice){utterance.voice=voice;utterance.lang=voice.lang;}utterance.rate=Number(rate.value)||1;utterance.pitch=1;},refresh};
+  return {apply(utterance){
+    if(selected==='__original__'){utterance.lang='en-US';utterance.rate=.88;utterance.pitch=1;return;}
+    const voice=choice();if(voice){utterance.voice=voice;utterance.lang=voice.lang;}utterance.rate=Number(rate.value)||1;utterance.pitch=1;
+  },refresh};
 }
