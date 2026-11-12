@@ -3,8 +3,8 @@
   "short_name": "Speaking Trainer",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f4f7fb",
-  "theme_color": "#245a9f",
+  "background_color": "#f5f5f7",
+  "theme_color": "#f5f5f7",
   "icons": [
     {
       "src": "icon.svg",
